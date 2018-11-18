@@ -11,9 +11,8 @@ with open(file_name, "r") as csvfile:
 	for row in rd:
 		for i, it in enumerate(row):
 			total[i] += 1
-			if not it:
+			if it=='':
 				miss[i] += 1
-	with open("")
 	for i in range(23):
 		print("The col #{} percentage is: {}".format(i, miss[i] / total[i]))
 		print("The col #{} number is: {}".format(i, miss[i]))
