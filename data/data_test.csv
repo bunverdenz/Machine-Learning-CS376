@@ -1,3 +1,4 @@
+contract_date,latitude,longitude,altitude,first_class_region_id,second_class_region_id,road_id,apartment_id,floor,direction,area,number_of_cars_in_parking_lot,area_of_parking_lot,external_vehicle_entrance,avg_management_fee,number_of_households,avg_age_of_residents,builder_id,construnction_completion_date,built_year,schools,bus_stops,subway_stations
 1989-05-14,40.7844,-73.9445,55.1,2,2,2,2,10,42,45.3121,2621,51320,0,62,8678,48.2,,1975-01-01,1975,7,9,2
 1992-08-03,40.7844,-73.9445,55.1,2,2,2,2,1,105,50.2345,2621,51320,0,62,8678,48.2,,1975-01-01,1975,7,9,2
 1992-09-30,40.7844,-73.9445,55.1,2,2,2,2,5,151,50.2345,2621,51320,0,62,8678,48.2,,1975-01-01,1975,7,9,2
