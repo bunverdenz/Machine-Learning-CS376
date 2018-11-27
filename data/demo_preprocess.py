@@ -11,11 +11,14 @@ def pre_process(indexes):
 		if row[0]=='contract_date':
 			continue
 
+		discard = False
+
 		features = []
 		for index in indexes:
 			if not row[index]:
-				features.append(None)
-				continue
+				#features.append(None)
+				discard = True
+				break
 			if index==0:
 				features.append(process_date(row[index]))
 			elif index==18:
@@ -25,10 +28,13 @@ def pre_process(indexes):
 			else:
 				features.append(float(row[index]))
 
+		if discard:
+			continue
+
 		x_train.append(features)
 		y_train.append(float((row[23])))
 
-	x_train = handle_nones(x_train)
+	#x_train = handle_nones(x_train)
 	return (np.array(x_train),np.array(y_train))
 
 def year_to_days(year):
