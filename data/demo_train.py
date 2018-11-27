@@ -2,6 +2,7 @@ from demo_preprocess import pre_process
 from sklearn import datasets, linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn import ensemble
+from sklearn.model_selection import KFold
 
 def sklearn_linear(indexes):
 	x_train, y_train = pre_process(indexes)
@@ -37,26 +38,30 @@ def sklearn_linear(indexes):
 
 
 def sklearn_gradient_boosting(indexes):
-	x_train, y_train = pre_process(indexes)
+	X, Y = pre_process(indexes)
 
-	fraction = int(len(x_train)*0.90)
+	kf = KFold(n_splits=5)
 
-	# Split the data into training/testing sets
-	X_train = x_train[:-fraction]
-	X_test = x_train[-fraction:]
+	total_score = 0
 
-	# Split the targets into training/testing sets
-	Y_train = y_train[:-fraction]
-	Y_test = y_train[-fraction:]
+	i=0
+	for train_index, test_index in kf.split(X):
+		X_train, X_test = X[train_index], X[test_index]
+		Y_train, Y_test = Y[train_index], Y[test_index]
 
-	clf = ensemble.GradientBoostingRegressor(n_estimators = 25, max_depth=5, min_samples_split=3,learning_rate=0.1,loss='ls')
+		clf = ensemble.GradientBoostingRegressor(n_estimators = 25, max_depth=5, min_samples_split=3,learning_rate=0.1,loss='ls')
 
-	clf.fit(X_train,Y_train)
+		clf.fit(X_train,Y_train)
+		score = clf.score(X_test,Y_test)
+		total_score += score
+		print("Accuracy of {}'s iteration: {}".format(i, score))
+		i+=1
 
-	#Y_pred = clf.predict(X_test)
 
-	print("Accuracy:",clf.score(X_test,Y_test))
+	print("Accuracy:",total_score/i)
+	
 
+	clf.fit(X,Y)
 	return clf
 
 
