@@ -1,7 +1,7 @@
 import csv 
 import numpy as np
 
-f = open('data_train.csv')
+f = open('data_test.csv')
 csv_f = csv.reader(f)
 
 def pre_process(indexes):
@@ -26,10 +26,9 @@ def pre_process(indexes):
 				features.append(float(row[index]))
 
 		x_train.append(features)
-		y_train.append(float((row[23])))
 
 	x_train = handle_nones(x_train)
-	return (np.array(x_train),np.array(y_train))
+	return np.array(x_train)
 
 def year_to_days(year):
 	leap = year//4
