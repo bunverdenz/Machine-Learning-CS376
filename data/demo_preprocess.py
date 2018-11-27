@@ -1,5 +1,7 @@
 import csv 
-import xgboost
+import numpy as np
+from sklearn import datasets, linear_model
+from sklearn.metrics import mean_squared_error, r2_score
 
 f = open('data_train.csv')
 csv_f = csv.reader(f)
@@ -58,6 +60,7 @@ def process_date(date):
 	return float(days)
 
 def handle_nones(x_train):
+	# just calculates the average for that feature
 	rowLength = len(x_train[0])
 	sums = [0]*rowLength
 	numbers = [0]*rowLength
@@ -78,11 +81,38 @@ def handle_nones(x_train):
 
 
 indexes = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
-
+indexes = [0,10,11,12,13,14,18,19]
 x_train, y_train = pre_process(indexes)
 
+x_train = np.array(x_train)
+y_train = np.array(y_train)
+
+# Split the data into training/testing sets
+diabetes_X_train = x_train[:-220000]
+diabetes_X_test = x_train[-220000:]
+
+# Split the targets into training/testing sets
+diabetes_y_train = y_train[:-220000]
+diabetes_y_test = y_train[-220000:]
+
+# Create linear regression object
+regr = linear_model.LinearRegression()
+
+# Train the model using the training sets
+regr.fit(diabetes_X_train, diabetes_y_train)
+
+# Make predictions using the testing set
+diabetes_y_pred = regr.predict(diabetes_X_test)
 
 
+print('Score:',regr.score(diabetes_X_test,diabetes_y_test))
+# The coefficients
+print('Coefficients: \n', regr.coef_)
+# The mean squared error
+print("Mean squared error: %.2f"
+      % mean_squared_error(diabetes_y_test, diabetes_y_pred))
+# Explained variance score: 1 is perfect prediction
+print('Variance score: %.2f' % r2_score(diabetes_y_test, diabetes_y_pred))
 
 
 
