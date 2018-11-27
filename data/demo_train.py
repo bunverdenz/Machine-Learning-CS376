@@ -3,6 +3,8 @@ from sklearn import datasets, linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn import ensemble
 from sklearn.model_selection import KFold
+from xgboost import XGBRegressor
+from sklearn.metrics import explained_variance_score
 
 def sklearn_linear(indexes):
 	x_train, y_train = pre_process(indexes)
@@ -54,7 +56,7 @@ def sklearn_gradient_boosting(indexes):
 		clf.fit(X_train,Y_train)
 		score = clf.score(X_test,Y_test)
 		total_score += score
-		print("Accuracy of {}'s iteration: {}".format(i, score))
+		print("Accuracy of {}'th iteration: {}".format(i, score))
 		i+=1
 
 
@@ -63,6 +65,43 @@ def sklearn_gradient_boosting(indexes):
 
 	clf.fit(X,Y)
 	return clf
+
+def xgboost(indexes):
+	X, Y = pre_process(indexes)
+	
+	kf = KFold(n_splits=5, shuffle=True)
+
+	total_score = 0
+
+	i=0
+	for train_index, test_index in kf.split(X):
+		X_train, X_test = X[train_index], X[test_index]
+		Y_train, Y_test = Y[train_index], Y[test_index]
+
+		xgb = XGBRegressor(n_estimators=25, learning_rate=0.12, gamma=0, subsample=0.75,
+                           colsample_bytree=1, max_depth=7)
+
+		xgb.fit(X_train,Y_train)
+
+		y_pred = xgb.predict(X_test)
+		score = explained_variance_score(y_pred,Y_test)
+
+		total_score += score
+		print("Accuracy of {}'th iteration: {}".format(i, score))
+		i+=1
+
+
+	print("Accuracy:",total_score/i)
+	
+
+	#xgb.fit(X,Y)
+	return xgb
+
+
+
+
+
+
 
 
 
