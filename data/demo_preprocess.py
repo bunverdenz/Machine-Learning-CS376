@@ -30,9 +30,9 @@ def pre_process(indexes):
 
 		if discard:
 			continue
-
-		x_train.append(features)
-		y_train.append(float((row[23])))
+		if (not row[1] or float(row[1]) > 40.2) and float(row[23]) <= 100000:
+			x_train.append(features)
+			y_train.append(float((row[23])))
 
 	#x_train = handle_nones(x_train)
 	return (np.array(x_train),np.array(y_train))
