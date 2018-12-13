@@ -6,6 +6,8 @@ from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_val_score
 from xgboost import XGBRegressor
 from sklearn.metrics import accuracy_score
+import scipy.stats as st
+from sklearn.model_selection import RandomizedSearchCV
 
 def sklearn_linear(indexes):
 	x_train, y_train = pre_process(indexes)
@@ -100,6 +102,28 @@ def xgboost(indexes):
 	return xgb
 
 
+def xgboost_test(indexes):
+	X, Y = pre_process(indexes)
+	estimator = XGBRegressor(nthreads=-1)
+	params = {
+		"n_estimators": st.randint(3, 40),
+		"learning_rate": st.uniform(0.05, 0.4),
+		"gamma": st.uniform(0, 10),
+		"subsample": st.beta(10, 1),
+		"colsample_bytree": st.beta(10, 1),
+		"max_depth": st.randint(3, 40),
+
+	}
+	# Random Search Training with 5 folds CV
+	clf = RandomizedSearchCV(estimator, params, cv=5,
+							 n_jobs=1, n_iter=100)
+	clf.fit(X, Y)
+	best_params = clf.best_params_
+	best_score = clf.best_score_
+
+	print("best_params", best_params)
+	print("best_score", best_score)
+	return best_params, best_score
 
 
 
