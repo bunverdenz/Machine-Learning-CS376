@@ -135,6 +135,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input', type=str, 
                         help='input file')
+    parser.add_argument('--xgb_ratio',
+                        type=float,
+                        default=0.3)
+    parser.add_argument('--lgb_ratio',
+                        type=float,
+                        default=0.7)
     # XGB arguments ------------------------------------------------------------------------
     parser.add_argument('--xgb_n_estimators', 
                         type=int,
@@ -157,19 +163,10 @@ def main():
     # LGB arguments ------------------------------------------------------------------------
     parser.add_argument('--lgb_n_estimators',
                         type=int,
-                        default=720)
-    parser.add_argument('--lgb_num_leaves',
-                        type=int,
-                        default=10)
+                        default=2048)
     parser.add_argument('--lgb_learning_rate',
                         type=float,
-                        default=0.03)
-    parser.add_argument('--lgb_bagging_freq',
-                        type=int,
-                        default=5)
-    parser.add_argument('--lgb_feature_fraction',
-                        type=float,
-                        default=0.25)
+                        default=0.5)
 
     
     args = parser.parse_args()
@@ -187,7 +184,7 @@ def main():
     X = new_data.values
     y = data.price.values
 
-    lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.1, random_state=1, max_iter=100000))
+    # lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.1, random_state=1, max_iter=100000))
 
     model_xgb = xgboost.XGBRegressor(
                                     n_estimators=args.xgb_n_estimators,
@@ -196,22 +193,35 @@ def main():
                                     subsample=args.xgb_subsample,
                                     colsample_bytree=args.xgb_colsample_bytree, 
                                     max_depth=args.xgb_max_depth)
-    model_lgb = lightgbm.LGBMRegressor(objective='regression',num_leaves=args.lgb_num_leaves,
-                                learning_rate=args.lgb_learning_rate, n_estimators=args.lgb_n_estimators,
-                                bagging_freq = args.lgb_bagging_freq, feature_fraction = args.lgb_feature_fraction)
+    model_lgb = lightgbm.LGBMRegressor(objective='regression',
+                                learning_rate=args.lgb_learning_rate, n_estimators=args.lgb_n_estimators
+                                )
 
-    score = perf_score(model_xgb, X, y)
-    print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-    score = perf_score(lasso, X, y)
-    print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-    score = perf_score(model_lgb, X, y)
+    # score = perf_score(model_xgb, X, y)
+    # print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+    # score = perf_score(lasso, X, y)
+    # print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+    # score = perf_score(model_lgb, X, y)
+    # print("LGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+    #
+    # averaged_models = AveragingModels(models = (model_xgb, model_lgb, lasso),
+    #                                 weights= (0.6, 0.3, 0.1))
+    # score = perf_score(averaged_models, X, y)
+    # print("Averaged model score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+
+    model_xgb.fit(X, y)
+    model_lgb.fit(X, y)
+    xgb_pred = model_xgb.predict(X)
+    lgb_pred = model_lgb.predict(X)
+    score = perf(xgb_pred, y)
+    print("XGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+    score = perf(lgb_pred, y)
     print("LGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
 
-    averaged_models = AveragingModels(models = (model_xgb, model_lgb, lasso),
-                                    weights= (0.6, 0.3, 0.1))
-    score = perf_score(averaged_models, X, y)
-    print("Averaged model score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-    Y_pred = ???
-    savetxt("y_pred.csv", Y_pred)
+    ensemble = args.xgb_ratio * xgb_pred + args.lgb_ratio * lgb_pred
+    score = perf(ensemble, y)
+    print("Ensemble score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+    savetxt("unique.csv", ensemble)
+    
 if __name__ == '__main__':
     main()
