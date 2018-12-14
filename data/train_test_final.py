@@ -103,9 +103,6 @@ for f in features:
 data_correlations = pd.DataFrame(correlations, index=['Value']).T
 data_correlations.loc[data_correlations['Value'].abs().sort_values(ascending=False).index]
 
-y = data.loc[:,['sqft_living','grade',target]].sort_values(target, ascending=True).values
-x = np.arange(y.shape[0])
-
 new_data = data[['floor', 'area', 'area_of_parking_lot',
                  'number_of_cars_in_parking_lot', 'external_vehicle_entrance', 'avg_management_fee',
                  'number_of_households', 'avg_age_of_residents']]
