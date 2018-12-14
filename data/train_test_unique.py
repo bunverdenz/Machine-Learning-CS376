@@ -16,6 +16,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin, clone
+from numpy import savetxt
 
 def perf(actual, pred):
     total = 0
@@ -130,9 +131,11 @@ def preprocess(file_name='data_train.csv'):
     return data
 
 def main():
+    # Command line handling ------------------------------------------------------------------------
     parser = argparse.ArgumentParser()
     parser.add_argument('input', type=str, 
                         help='input file')
+    # XGB arguments ------------------------------------------------------------------------
     parser.add_argument('--xgb_n_estimators', 
                         type=int,
                         default=25)
@@ -151,10 +154,30 @@ def main():
     parser.add_argument('--xgb_max_depth',
                         type=int,
                         default=10)
+    # LGB arguments ------------------------------------------------------------------------
+    parser.add_argument('--lgb_n_estimators',
+                        type=int,
+                        default=720)
+    parser.add_argument('--lgb_num_leaves',
+                        type=int,
+                        default=10)
+    parser.add_argument('--lgb_learning_rate',
+                        type=float,
+                        default=0.03)
+    parser.add_argument('--lgb_bagging_freq',
+                        type=int,
+                        default=5)
+    parser.add_argument('--lgb_feature_fraction',
+                        type=float,
+                        default=0.25)
+
     
     args = parser.parse_args()
-    data = preprocess(args.input) 
 
+    # Preprocess data ------------------------------------------------------------------------------
+    data = preprocess(args.input)
+
+    # Fit data and get Score -----------------------------------------------------------------------
     new_data = data[['floor', 'area', 'area_of_parking_lot',
                     'number_of_cars_in_parking_lot', 'external_vehicle_entrance', 'avg_management_fee',
                     'number_of_households', 'avg_age_of_residents', "age", "day_diff",
@@ -165,6 +188,7 @@ def main():
     y = data.price.values
 
     lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.1, random_state=1, max_iter=100000))
+
     model_xgb = xgboost.XGBRegressor(
                                     n_estimators=args.xgb_n_estimators,
                                     learning_rate=args.xgb_learning_rate, 
@@ -172,9 +196,9 @@ def main():
                                     subsample=args.xgb_subsample,
                                     colsample_bytree=args.xgb_colsample_bytree, 
                                     max_depth=args.xgb_max_depth)
-    model_lgb = lightgbm.LGBMRegressor(objective='regression',num_leaves=10,
-                                learning_rate=0.03, n_estimators=720,
-                                bagging_freq = 5, feature_fraction = 0.25)
+    model_lgb = lightgbm.LGBMRegressor(objective='regression',num_leaves=args.lgb_num_leaves,
+                                learning_rate=args.lgb_learning_rate, n_estimators=args.lgb_n_estimators,
+                                bagging_freq = args.lgb_bagging_freq, feature_fraction = args.lgb_feature_fraction)
 
     score = perf_score(model_xgb, X, y)
     print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
@@ -187,6 +211,7 @@ def main():
                                     weights= (0.6, 0.3, 0.1))
     score = perf_score(averaged_models, X, y)
     print("Averaged model score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-
+    Y_pred = ???
+    savetxt("y_pred.csv", Y_pred)
 if __name__ == '__main__':
     main()
