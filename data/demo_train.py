@@ -10,13 +10,14 @@ from sklearn.metrics import accuracy_score
 def sklearn_linear(indexes):
 	x_train, y_train = pre_process(indexes)
 
+	fraction = int(len(x_train)*0.85)
 	# Split the data into training/testing sets
-	X_train = x_train[:-220000]
-	X_test = x_train[-220000:]
+	X_train = x_train[:-fraction]
+	X_test = x_train[-fraction:]
 
 	# Split the targets into training/testing sets
-	Y_train = y_train[:-220000]
-	Y_test = y_train[-220000:]
+	Y_train = y_train[:-fraction]
+	Y_test = y_train[-fraction:]
 
 	# Create linear regression object
 	regr = linear_model.LinearRegression()
@@ -70,7 +71,7 @@ def sklearn_gradient_boosting(indexes):
 def xgboost(indexes):
 	X, Y = pre_process(indexes)
 	
-	kf = KFold(n_splits=5, shuffle=True)
+	kf = KFold(n_splits=10, shuffle=False)
 
 	total_score = 0
 
@@ -93,11 +94,9 @@ def xgboost(indexes):
 
 
 	print("Accuracy:",total_score/i)
-	
-
-	#xgb.fit(X,Y)
 
 	return xgb
+
 
 
 
