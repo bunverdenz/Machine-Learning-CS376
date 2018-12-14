@@ -14,6 +14,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import RobustScaler
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
+from sklearn.base import BaseEstimator, TransformerMixin, RegressorMixin, clone
 
 def perf(actual, pred):
     total = 0
@@ -31,8 +32,30 @@ def perf1(est, X, y):
 
 def perf_score(model, X, y, n_folds=5):
     kf = KFold(n_folds, shuffle=True, random_state=1000).get_n_splits(X)
-    return cross_val_score(model, X, y, scoring=perf1, cv = kf)def rmsle_cv(model, X, y, n_folds=5):
+    return cross_val_score(model, X, y, scoring=perf1, cv = kf)
 
+class AveragingModels(BaseEstimator, RegressorMixin, TransformerMixin):
+    def __init__(self, models, weights=None):
+        self.models = models
+        self.weights = weights
+    
+    # we define clones of the original models to fit the data in
+    def fit(self, X, y):
+        self.models_ = [clone(x) for x in self.models]
+        
+        # Train cloned base models
+        for model in self.models_:
+            model.fit(X, y)
+
+        return self
+    
+    #Now we do the predictions for cloned models and average them
+    def predict(self, X):
+        predictions = np.column_stack([
+            model.predict(X) for model in self.models_
+        ])
+        return np.mean(predictions, axis=1) 
+  
 # Read the data into a data frame
 data = pd.read_csv('data_train.csv', parse_dates=[0,18])
 features = data.iloc[:,:23].columns.tolist()
@@ -123,4 +146,8 @@ print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
 score = perf_score(lasso, X, y)
 print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
 score = perf_score(model_lgb, X, y)
-print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+print("LGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+
+averaged_models = AveragingModels(models = (model_xgb, model_lgb))
+score = perf_score(model_lgb, X, y)
+print("Averaged model score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
