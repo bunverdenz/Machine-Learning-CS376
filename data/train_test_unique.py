@@ -54,7 +54,7 @@ class AveragingModels(BaseEstimator, RegressorMixin, TransformerMixin):
         predictions = np.column_stack([
             model.predict(X) for model in self.models_
         ])
-        return np.average(predictions, axis=1) 
+        return np.average(predictions, axis=1, weights=weights) 
   
 # Read the data into a data frame
 data = pd.read_csv('data_train.csv', parse_dates=[0,18])
@@ -147,7 +147,6 @@ score = perf_score(model_xgb, X, y)
 print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
 score = perf_score(lasso, X, y)
 print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-exit(0)
 score = perf_score(model_lgb, X, y)
 print("LGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
 
