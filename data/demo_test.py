@@ -1,20 +1,6 @@
-from demo_train import sklearn_linear
-from demo_train import sklearn_gradient_boosting
 from demo_preprocess_test import pre_process
-from y_to_csv import save
+
 from demo_train import xgboost
-
-# sklearn Linear Regression
-def run_sklearn_linear_regression(indexes):
-	regr = sklearn_linear(indexes)
-	Y_pred = regr.predict(x_test)
-	return Y_pred
-
-# sklearn Gradient Boosting Regression
-def run_sklearn_gradient_boosting(indexes):
-	clf = sklearn_gradient_boosting(indexes)
-	Y_pred = clf.predict(x_test)
-	return Y_pred
 
 # xgboost regressor
 def run_xgboost(indexes):
