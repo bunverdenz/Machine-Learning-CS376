@@ -55,102 +55,109 @@ class AveragingModels(BaseEstimator, RegressorMixin, TransformerMixin):
             model.predict(X) for model in self.models_
         ])
         return np.average(predictions, axis=1, weights=weights) 
-  
-# Read the data into a data frame
-data = pd.read_csv('data_train.csv', parse_dates=[0,18])
-features = data.iloc[:,:23].columns.tolist()
-# Check the number of data points in the data set
-print(len(data))
-# Check the number of features in the data set
-print(len(data.columns))
-# Check the data types
-print(data.dtypes.unique())
 
-data.select_dtypes(include=['O']).columns.tolist()
+def preprocess(file_name='data_train.csv'):
+    # Read the data into a data frame
+    data = pd.read_csv(file_name, parse_dates=[0,18])
+    features = data.iloc[:,:23].columns.tolist()
+    # Check the number of data points in the data set
+    print(len(data))
+    # Check the number of features in the data set
+    print(len(data.columns))
+    # Check the data types
+    print(data.dtypes.unique())
 
-# Check any number of columns with NaN
-print(data.isnull().any().sum(), ' / ', len(data.columns))
-# Check any number of data points with NaN
-print(data.isnull().any(axis=1).sum(), ' / ', len(data))
+    data.select_dtypes(include=['O']).columns.tolist()
 
-# Drop the 'builder_id' column and also date features
-data = data.drop(['builder_id'],axis=1)
-# Now let's check our data statistics
+    # Check any number of columns with NaN
+    print(data.isnull().any().sum(), ' / ', len(data.columns))
+    # Check any number of data points with NaN
+    print(data.isnull().any(axis=1).sum(), ' / ', len(data))
 
-# Check any number of columns with NaN
-print(data.isnull().any().sum(), ' / ', len(data.columns))
-# Check any number of data points with NaN
-print(data.isnull().any(axis=1).sum(), ' / ', len(data), end=" -> ")
-print(data.isnull().any(axis=1).sum() / len(data), "%")
+    # Drop the 'builder_id' column and also date features
+    data = data.drop(['builder_id'],axis=1)
+    # Now let's check our data statistics
 
-# Calculate age
-data["age"] = 2018 - data["built_year"]
-data.drop(["built_year"], axis=1, inplace=True)
-cols = data.columns.tolist()
-cols = cols[-1:] + cols[:-1]
-data = data[cols]
-# Count days since apartment was constructed --------------------------------------------------------------
-data["day_diff"] = -(data["construnction_completion_date"] - data["contract_date"]).dt.days
-data.drop(["contract_date"], axis=1, inplace=True)
-data.drop(["construnction_completion_date"], axis=1, inplace=True)
-cols = data.columns.tolist()
-cols = cols[-1:] + cols[:-1]
-data = data[cols]
+    # Check any number of columns with NaN
+    print(data.isnull().any().sum(), ' / ', len(data.columns))
+    # Check any number of data points with NaN
+    print(data.isnull().any(axis=1).sum(), ' / ', len(data), end=" -> ")
+    print(data.isnull().any(axis=1).sum() / len(data), "%")
 
-# Change label ---------------------------------------------------------------------------------------------
-lb = preprocessing.LabelBinarizer()
-# 1st_class_reg, try to categorize id of 1st_class into six id (see test_data)
-temp = lb.fit_transform(data["first_class_region_id"].values.reshape(-1, 1))
-data.drop(["first_class_region_id"], axis=1, inplace=True)
-temp = temp[:, :5]
-data = pd.concat([data, pd.DataFrame(temp, columns=["one", "two", "three", "four", "five"])], axis=1)
-data.fillna(0,inplace=True)
-cols = data.columns.tolist()
-cols = cols[-5:] + cols[:-5]
-data = data[cols]
+    # Calculate age
+    data["age"] = 2018 - data["built_year"]
+    data.drop(["built_year"], axis=1, inplace=True)
+    cols = data.columns.tolist()
+    cols = cols[-1:] + cols[:-1]
+    data = data[cols]
+    # Count days since apartment was constructed --------------------------------------------------------------
+    data["day_diff"] = -(data["construnction_completion_date"] - data["contract_date"]).dt.days
+    data.drop(["contract_date"], axis=1, inplace=True)
+    data.drop(["construnction_completion_date"], axis=1, inplace=True)
+    cols = data.columns.tolist()
+    cols = cols[-1:] + cols[:-1]
+    data = data[cols]
 
-features = data.iloc[:,:25].columns.tolist()
-print(features)
-target = data.iloc[:,25].name
-print(target)
+    # Change label ---------------------------------------------------------------------------------------------
+    lb = preprocessing.LabelBinarizer()
+    # 1st_class_reg, try to categorize id of 1st_class into six id (see test_data)
+    temp = lb.fit_transform(data["first_class_region_id"].values.reshape(-1, 1))
+    data.drop(["first_class_region_id"], axis=1, inplace=True)
+    temp = temp[:, :5]
+    data = pd.concat([data, pd.DataFrame(temp, columns=["one", "two", "three", "four", "five"])], axis=1)
+    data.fillna(0,inplace=True)
+    cols = data.columns.tolist()
+    cols = cols[-5:] + cols[:-5]
+    data = data[cols]
 
-# CHECK correlation of each column
-correlations = {}
-for f in features:
-    data_temp = data[[f,target]]
-    x1 = data_temp[f].values
-    x2 = data_temp[target].values
-    key = f + ' vs ' + target
-    correlations[key] = pearsonr(x1,x2)[0]
+    features = data.iloc[:,:25].columns.tolist()
+    print(features)
+    target = data.iloc[:,25].name
+    print(target)
 
-data_correlations = pd.DataFrame(correlations, index=['Value']).T
-data_correlations.loc[data_correlations['Value'].abs().sort_values(ascending=False).index]
+    # CHECK correlation of each column
+    correlations = {}
+    for f in features:
+        data_temp = data[[f,target]]
+        x1 = data_temp[f].values
+        x2 = data_temp[target].values
+        key = f + ' vs ' + target
+        correlations[key] = pearsonr(x1,x2)[0]
 
-new_data = data[['floor', 'area', 'area_of_parking_lot',
-                 'number_of_cars_in_parking_lot', 'external_vehicle_entrance', 'avg_management_fee',
-                 'number_of_households', 'avg_age_of_residents', "age", "day_diff",
-                 "one", "two", "three", "four", "five"
-                 ]]
+    data_correlations = pd.DataFrame(correlations, index=['Value']).T
+    data_correlations.loc[data_correlations['Value'].abs().sort_values(ascending=False).index]
+    return data
 
-X = new_data.values
-y = data.price.values
+def main():
+    data = preprocess() 
 
+    new_data = data[['floor', 'area', 'area_of_parking_lot',
+                    'number_of_cars_in_parking_lot', 'external_vehicle_entrance', 'avg_management_fee',
+                    'number_of_households', 'avg_age_of_residents', "age", "day_diff",
+                    "one", "two", "three", "four", "five"
+                    ]]
 
-lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.1, random_state=1, max_iter=100000))
-model_xgb = xgboost.XGBRegressor(n_estimators=25, learning_rate=0.15, gamma=0, subsample=0.75,
-                       colsample_bytree=1, max_depth=10)
-model_lgb = lightgbm.LGBMRegressor(objective='regression',num_leaves=10,
-                              learning_rate=0.03, n_estimators=720,
-                              bagging_freq = 5, feature_fraction = 0.25)
+    X = new_data.values
+    y = data.price.values
 
-score = perf_score(model_xgb, X, y)
-print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-score = perf_score(lasso, X, y)
-print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-score = perf_score(model_lgb, X, y)
-print("LGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+    lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.1, random_state=1, max_iter=100000))
+    model_xgb = xgboost.XGBRegressor(n_estimators=25, learning_rate=0.15, gamma=0, subsample=0.75,
+                        colsample_bytree=1, max_depth=10)
+    model_lgb = lightgbm.LGBMRegressor(objective='regression',num_leaves=10,
+                                learning_rate=0.03, n_estimators=720,
+                                bagging_freq = 5, feature_fraction = 0.25)
 
-averaged_models = AveragingModels(models = (model_xgb, model_lgb, lasso),
-                                  weights= (0.6, 0.3, 0.1))
-score = perf_score(averaged_models, X, y)
-print("Averaged model score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+    score = perf_score(model_xgb, X, y)
+    print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+    score = perf_score(lasso, X, y)
+    print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+    score = perf_score(model_lgb, X, y)
+    print("LGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+
+    averaged_models = AveragingModels(models = (model_xgb, model_lgb, lasso),
+                                    weights= (0.6, 0.3, 0.1))
+    score = perf_score(averaged_models, X, y)
+    print("Averaged model score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+
+if __name__ == '__main__':
+    main()
