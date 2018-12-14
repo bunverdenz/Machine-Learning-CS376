@@ -54,7 +54,7 @@ class AveragingModels(BaseEstimator, RegressorMixin, TransformerMixin):
         predictions = np.column_stack([
             model.predict(X) for model in self.models_
         ])
-        return np.mean(predictions, axis=1) 
+        return np.average(predictions, axis=1) 
   
 # Read the data into a data frame
 data = pd.read_csv('data_train.csv', parse_dates=[0,18])
@@ -136,20 +136,22 @@ X = new_data.values
 y = data.price.values
 
 
-lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.0005, random_state=1))
+lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.1, random_state=1, max_iter=100000))
 model_xgb = xgboost.XGBRegressor(n_estimators=25, learning_rate=0.15, gamma=0, subsample=0.75,
                        colsample_bytree=1, max_depth=10)
-model_lgb = lightgbm.LGBMRegressor(objective='regression',num_leaves=5,
-                              learning_rate=0.05, n_estimators=720,
+model_lgb = lightgbm.LGBMRegressor(objective='regression',num_leaves=10,
+                              learning_rate=0.03, n_estimators=720,
                               bagging_freq = 5, feature_fraction = 0.25)
 
 score = perf_score(model_xgb, X, y)
 print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
 score = perf_score(lasso, X, y)
 print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
+exit(0)
 score = perf_score(model_lgb, X, y)
 print("LGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
 
-averaged_models = AveragingModels(models = (model_xgb, model_lgb))
-score = perf_score(model_lgb, X, y)
+averaged_models = AveragingModels(models = (model_xgb, model_lgb, lasso),
+                                  weights= (0.6, 0.3, 0.1))
+score = perf_score(averaged_models, X, y)
 print("Averaged model score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
