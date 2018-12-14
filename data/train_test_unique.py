@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import xgboost
 import lightgbm
 import math
+import argparse
 from scipy.stats import pearsonr
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
@@ -129,7 +130,14 @@ def preprocess(file_name='data_train.csv'):
     return data
 
 def main():
-    data = preprocess() 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input', type=str, 
+                        help='input file')
+    parser.add_argument('--xgb_n_estimators', 
+                        type=int,
+                        default=25)
+    args = parser.parse_args()
+    data = preprocess(args.input) 
 
     new_data = data[['floor', 'area', 'area_of_parking_lot',
                     'number_of_cars_in_parking_lot', 'external_vehicle_entrance', 'avg_management_fee',
