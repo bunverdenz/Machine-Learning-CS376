@@ -6,7 +6,6 @@ from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_val_score
 from xgboost import XGBRegressor
 from sklearn.metrics import accuracy_score
-<<<<<<< HEAD
 
 def sklearn_linear(indexes):
 	x_train, y_train = pre_process(indexes)
@@ -68,10 +67,6 @@ def sklearn_gradient_boosting(indexes):
 
 	clf.fit(X,Y)
 	return clf
-=======
-import scipy.stats as st
-from sklearn.model_selection import RandomizedSearchCV
->>>>>>> cc251a88bc820a4ce3182e76ee123e74e291dd14
 
 def xgboost(indexes):
 	X, Y = pre_process(indexes)
