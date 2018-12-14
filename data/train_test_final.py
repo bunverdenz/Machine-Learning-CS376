@@ -2,11 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import xgboost
+import lightgbm
 import math
-# from __future__ import division
 from scipy.stats import pearsonr
 from sklearn.linear_model import LinearRegression
-#from sklearn import cross_validation, tree, linear_model
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import explained_variance_score
 from sklearn.model_selection import KFold
@@ -16,18 +15,23 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 
+def perf(actual, pred):
+    total = 0
+    for i in range(len(actual)):
+        total += abs(actual[i] - pred[i]) / actual[i]
+    return 1 - total/len(actual)
 
-def rmsle_cv(model, X, y, n_folds=5):
+def perf1(est, X, y):
+    est.fit(X, y)
+    pred = est.predict(X)
+    total = 0
+    for i in range(len(y)):
+        total += abs(y[i] - pred[i]) / y[i]
+    return 1 - total/len(y)
+
+def perf_score(model, X, y, n_folds=5):
     kf = KFold(n_folds, shuffle=True, random_state=1000).get_n_splits(X)
-    rmse= np.sqrt(-cross_val_score(model, X, y, scoring="neg_mean_squared_error", cv = kf))
-    return(rmse)
-
-def accuracy_score(model, X, y, n_folds=5):
-    kf = KFold(n_folds, shuffle=True).get_n_splits(X)
-    print("wtf")
-    acc = cross_val_score(model, X, y, cv=kf)
-    print("wtf")
-    return acc
+    return cross_val_score(model, X, y, scoring=perf1, cv = kf)def rmsle_cv(model, X, y, n_folds=5):
 
 # Read the data into a data frame
 data = pd.read_csv('data_train.csv', parse_dates=[0,18])
@@ -109,18 +113,17 @@ new_data = data[['floor', 'area', 'area_of_parking_lot',
 X = new_data.values
 y = data.price.values
 
+
 lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.0005, random_state=1))
 model_xgb = xgboost.XGBRegressor(n_estimators=25, learning_rate=0.15, gamma=0, subsample=0.75,
                        colsample_bytree=1, max_depth=10)
+model_lgb = lightgbm.LGBMRegressor(objective='regression',num_leaves=5,
+                              learning_rate=0.05, n_estimators=720,
+                              bagging_freq = 5, feature_fraction = 0.25)
 
-print("HUH")
-score = rmsle_cv(model_xgb, X, y)
+score = perf_score(model_xgb, X, y)
 print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-score = rmsle_cv(lasso, X, y)
+score = perf_score(lasso, X, y)
 print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-
-score = accuracy_score(model_xgb, X, y)
-print("CHELC")
-print("XGBoost accuracy: %0.2f (+/- %0.2f)" % (score.mean(), score.std() * 2))
-score = accuracy_score(lasso, X, y)
-print("Lasso accuracy: %0.2f (+/- %0.2f)" % (score.mean(), score.std() * 2))
+score = perf_score(model_lgb, X, y)
+print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
