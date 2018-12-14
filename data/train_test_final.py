@@ -128,7 +128,9 @@ data_correlations.loc[data_correlations['Value'].abs().sort_values(ascending=Fal
 
 new_data = data[['floor', 'area', 'area_of_parking_lot',
                  'number_of_cars_in_parking_lot', 'external_vehicle_entrance', 'avg_management_fee',
-                 'number_of_households', 'avg_age_of_residents']]
+                 'number_of_households', 'avg_age_of_residents', "age", "day_diff",
+                 "one", "two", "three", "four", "five"
+                 ]]
 
 X = new_data.values
 y = data.price.values
