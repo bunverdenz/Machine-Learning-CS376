@@ -37,6 +37,7 @@ def xgboost(indexes):
 
 	score = perf_score(xgb, X, Y)
 	print("Accuracy: {}".format(score.mean()))
+	xgb.fit(X, Y)
 	return xgb
 
 

@@ -13,4 +13,4 @@ indexes = [0,8,10,11,12,13,14,15,16,18,19]
 x_test = pre_process(indexes)
 
 Y_pred = run_xgboost(indexes)
-#save(Y_pred)
+save(Y_pred)
