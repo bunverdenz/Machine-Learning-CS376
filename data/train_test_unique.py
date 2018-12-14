@@ -111,30 +111,37 @@ def preprocess(file_name='data_train.csv'):
     cols = data.columns.tolist()
     cols = cols[-5:] + cols[:-5]
     data = data[cols]
+    
+    if 'price' in data:
+        features = data.iloc[:,:25].columns.tolist()
+        print(features)
+        
+        target = data.iloc[:,25].name
+        print(target)
 
-    features = data.iloc[:,:25].columns.tolist()
-    print(features)
-    target = data.iloc[:,25].name
-    print(target)
+        # CHECK correlation of each column
+        correlations = {}
+        for f in features:
+            data_temp = data[[f,target]]
+            x1 = data_temp[f].values
+            x2 = data_temp[target].values
+            key = f + ' vs ' + target
+            correlations[key] = pearsonr(x1,x2)[0]
 
-    # CHECK correlation of each column
-    correlations = {}
-    for f in features:
-        data_temp = data[[f,target]]
-        x1 = data_temp[f].values
-        x2 = data_temp[target].values
-        key = f + ' vs ' + target
-        correlations[key] = pearsonr(x1,x2)[0]
-
-    data_correlations = pd.DataFrame(correlations, index=['Value']).T
-    data_correlations.loc[data_correlations['Value'].abs().sort_values(ascending=False).index]
+        data_correlations = pd.DataFrame(correlations, index=['Value']).T
+        data_correlations.loc[data_correlations['Value'].abs().sort_values(ascending=False).index]
     return data
 
 def main():
     # Command line handling ------------------------------------------------------------------------
     parser = argparse.ArgumentParser()
-    parser.add_argument('input', type=str, 
-                        help='input file')
+    parser.add_argument('train', type=str, 
+                        help='input train data file')
+    parser.add_argument('test', type=str,
+                        help='input test data file')
+    parser.add_argument('--output', type=str,
+                        help='the name of output file',
+                        default='unique.csv')
     parser.add_argument('--xgb_ratio',
                         type=float,
                         default=0.3)
@@ -163,23 +170,24 @@ def main():
     # LGB arguments ------------------------------------------------------------------------
     parser.add_argument('--lgb_n_estimators',
                         type=int,
-                        default=2048)
+                        default=4096)
     parser.add_argument('--lgb_learning_rate',
                         type=float,
-                        default=0.5)
+                        default=0.7)
 
     
     args = parser.parse_args()
 
     # Preprocess data ------------------------------------------------------------------------------
-    data = preprocess(args.input)
+    data = preprocess(args.train)
 
     # Fit data and get Score -----------------------------------------------------------------------
-    new_data = data[['floor', 'area', 'area_of_parking_lot',
+    columns = ['floor', 'area', 'area_of_parking_lot',
                     'number_of_cars_in_parking_lot', 'external_vehicle_entrance', 'avg_management_fee',
                     'number_of_households', 'avg_age_of_residents', "age", "day_diff",
                     "one", "two", "three", "four", "five"
-                    ]]
+                    ]
+    new_data = data[columns]
 
     X = new_data.values
     y = data.price.values
@@ -209,19 +217,25 @@ def main():
     # score = perf_score(averaged_models, X, y)
     # print("Averaged model score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
 
+    # Fitting and evaluation -----------------------------------------------
     model_xgb.fit(X, y)
     model_lgb.fit(X, y)
+
     xgb_pred = model_xgb.predict(X)
     lgb_pred = model_lgb.predict(X)
     score = perf(xgb_pred, y)
     print("XGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
     score = perf(lgb_pred, y)
     print("LGB score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-
     ensemble = args.xgb_ratio * xgb_pred + args.lgb_ratio * lgb_pred
     score = perf(ensemble, y)
     print("Ensemble score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-    savetxt("unique.csv", ensemble)
+    
+    X_test = preprocess(args.test)[columns].values
+    xgb_pred = model_xgb.predict(X_test)
+    lgb_pred = model_lgb.predict(X_test)
+    ensemble = args.xgb_ratio * xgb_pred + args.lgb_ratio * lgb_pred
+    savetxt(args.output, ensemble)
     
 if __name__ == '__main__':
     main()
