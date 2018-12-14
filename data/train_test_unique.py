@@ -136,6 +136,22 @@ def main():
     parser.add_argument('--xgb_n_estimators', 
                         type=int,
                         default=25)
+    parser.add_argument('--xgb_learning_rate',
+                        type=float,
+                        default=0.15)
+    parser.add_argument('--xgb_gamma',
+                        type=int,
+                        default=0)
+    parser.add_argument('--xgb_subsample',
+                        type=float,
+                        default=0.75)
+    parser.add_argument('--xgb_colsample_bytree',
+                        type=int,
+                        default=1)
+    parser.add_argument('--xgb_max_depth',
+                        type=int,
+                        default=10)
+    
     args = parser.parse_args()
     data = preprocess(args.input) 
 
@@ -149,8 +165,13 @@ def main():
     y = data.price.values
 
     lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.1, random_state=1, max_iter=100000))
-    model_xgb = xgboost.XGBRegressor(n_estimators=25, learning_rate=0.15, gamma=0, subsample=0.75,
-                        colsample_bytree=1, max_depth=10)
+    model_xgb = xgboost.XGBRegressor(
+                                    n_estimators=args.xgb_n_estimators,
+                                    learning_rate=args.xgb_learning_rate, 
+                                    gamma=args.xgb_gamma, 
+                                    subsample=args.xgb_subsample,
+                                    colsample_bytree=args.xgb_colsample_bytree, 
+                                    max_depth=args.xgb_max_depth)
     model_lgb = lightgbm.LGBMRegressor(objective='regression',num_leaves=10,
                                 learning_rate=0.03, n_estimators=720,
                                 bagging_freq = 5, feature_fraction = 0.25)
