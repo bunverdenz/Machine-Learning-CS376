@@ -24,9 +24,7 @@ def rmsle_cv(model, X, y, n_folds=5):
 
 def accuracy_score(model, X, y, n_folds=5):
     kf = KFold(n_folds, shuffle=True).get_n_splits(X)
-    print("wtf")
     acc = cross_val_score(model, X, y, cv=kf)
-    print("wtf")
     return acc
 
 # Read the data into a data frame
@@ -99,9 +97,6 @@ for f in features:
 data_correlations = pd.DataFrame(correlations, index=['Value']).T
 data_correlations.loc[data_correlations['Value'].abs().sort_values(ascending=False).index]
 
-y = data.loc[:,['sqft_living','grade',target]].sort_values(target, ascending=True).values
-x = np.arange(y.shape[0])
-
 new_data = data[['floor', 'area', 'area_of_parking_lot',
                  'number_of_cars_in_parking_lot', 'external_vehicle_entrance', 'avg_management_fee',
                  'number_of_households', 'avg_age_of_residents']]
@@ -112,15 +107,3 @@ y = data.price.values
 lasso = make_pipeline(RobustScaler(), Lasso(alpha =0.0005, random_state=1))
 model_xgb = xgboost.XGBRegressor(n_estimators=25, learning_rate=0.15, gamma=0, subsample=0.75,
                        colsample_bytree=1, max_depth=10)
-
-print("HUH")
-score = rmsle_cv(model_xgb, X, y)
-print("Xgboost score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-score = rmsle_cv(lasso, X, y)
-print("Lasso score: {:.4f} ({:.4f})\n".format(score.mean(), score.std()))
-
-score = accuracy_score(model_xgb, X, y)
-print("CHELC")
-print("XGBoost accuracy: %0.2f (+/- %0.2f)" % (score.mean(), score.std() * 2))
-score = accuracy_score(lasso, X, y)
-print("Lasso accuracy: %0.2f (+/- %0.2f)" % (score.mean(), score.std() * 2))
